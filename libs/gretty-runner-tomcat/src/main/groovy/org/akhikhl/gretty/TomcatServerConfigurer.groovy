@@ -44,6 +44,8 @@ class TomcatServerConfigurer {
   Tomcat createAndConfigureServer(Closure configureContext = null) {
 
     Tomcat tomcat = new Tomcat()
+    def host = tomcat.host
+    host.children = new LinkedHashMap<>()
 
     if(params.enableNaming)
       tomcat.enableNaming()
