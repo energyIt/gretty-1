@@ -8,13 +8,12 @@
  */
 package org.akhikhl.gretty
 
-import org.apache.catalina.Host
-import org.apache.catalina.Lifecycle
-import org.apache.catalina.LifecycleEvent
-import org.apache.catalina.LifecycleListener
+import org.apache.catalina.*
 import org.apache.catalina.authenticator.SingleSignOn
 import org.apache.catalina.connector.Connector
+import org.apache.catalina.core.ContainerBase
 import org.apache.catalina.core.StandardContext
+import org.apache.catalina.core.StandardHost
 import org.apache.catalina.loader.WebappLoader
 import org.apache.catalina.realm.MemoryRealm
 import org.apache.catalina.startup.Catalina
@@ -24,6 +23,8 @@ import org.apache.catalina.startup.Tomcat.FixContextListener
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.xml.sax.InputSource
+
+import javax.management.ObjectName
 
 /**
  *
@@ -44,8 +45,34 @@ class TomcatServerConfigurer {
   Tomcat createAndConfigureServer(Closure configureContext = null) {
 
     Tomcat tomcat = new Tomcat()
-    def host = tomcat.host
-    host.children = new LinkedHashMap<>()
+    tomcat.host = new StandardHost() {
+      List childrenOrder = new ArrayList<>();
+      @Override
+      void addChild(Container child) {
+        childrenOrder.add(child)
+        super.addChild(child)
+      }
+
+      @Override
+      void removeChild(Container child) {
+        childrenOrder.remove(child)
+        super.removeChild(child)
+      }
+
+      @Override
+      ObjectName[] getChildren() {
+        ObjectName[] result = new ObjectName[childrenOrder.size()];
+        Iterator<Container> it = childrenOrder.iterator();
+        int i = 0;
+        while(it.hasNext()) {
+          Object next = it.next();
+          if(next instanceof ContainerBase) {
+            result[i++] = ((ContainerBase) next).getObjectName();
+          }
+        }
+        return result;
+      }
+    };
 
     if(params.enableNaming)
       tomcat.enableNaming()
