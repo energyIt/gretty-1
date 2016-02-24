@@ -89,7 +89,8 @@ class SkipPatternJarScanner extends StandardJarScanner {
 
     @Override
     boolean check(JarScanType jarScanType, String jarName) {
-      checkJar(jarName) && (additionalScanFilter == null || additionalScanFilter.check(jarScanType, jarName))
+      log.debug 'Skipping ' + jarName
+      false
     }
   }
 }
